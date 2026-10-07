@@ -1,0 +1,13 @@
+
+.env.*.local
+
+docs
+
+logs
+
+node_modules/
+dist/
+.env
+drizzle/
+*.log
+"@
