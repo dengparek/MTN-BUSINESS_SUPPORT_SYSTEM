@@ -39,9 +39,6 @@ async function startServer() {
   // 3. Start Express HTTP Server
   app.listen(PORT, () => {
     console.log(`MTN BSS Core Server is running on port ${PORT}`);
-    console.log(
-      `🔗 Health Check available at: http://localhost:${PORT}/health`,
-    );
   });
 }
 
