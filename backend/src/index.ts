@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 
 import { connectRedis } from "./config/redis";
+import { ussdRouter } from "./modules/ussd/ussd.router";
 
 dotenv.config();
 
@@ -16,6 +17,8 @@ app.use(express.json());
 
 // Critical for parsing urlencoded payloads sent by Africa's Talking USSD Gateway
 app.use(express.urlencoded({ extended: true }));
+
+app.use("/api/v1/ussd", ussdRouter);
 
 // --- HEALTH CHECK ROUTE ---
 app.get("/health", async (_req: Request, res: Response) => {

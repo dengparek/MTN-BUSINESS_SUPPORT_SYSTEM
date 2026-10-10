@@ -11,3 +11,5 @@ dist/
 drizzle/
 *.log
 "@
+
+scripts/

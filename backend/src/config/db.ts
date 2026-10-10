@@ -16,8 +16,10 @@ export const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
+  // Add connection timeout and keepalive to prevent hanging sockets
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 30000,
 });
-
 export const db = drizzle(pool, { schema });
 
 //Health check function to verify Neon Postgres connectivity on startup
