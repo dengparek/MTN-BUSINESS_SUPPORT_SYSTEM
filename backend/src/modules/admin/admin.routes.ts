@@ -3,6 +3,7 @@ import { AdminAuthController } from "../../modules/admin/admin-auth.controller";
 import { AdminDashboardController } from "../../modules/admin/admin-dashboard.controller";
 import { verifyAdmin } from "../../middlewares/admin.middleware";
 import { AdminKycController } from "./kyc.controller";
+import { AdminSimController } from "./sim.controller";
 
 const adminRouter = Router();
 
@@ -22,5 +23,11 @@ adminRouter.patch("/kyc/:userId", AdminKycController.updateKycStatus);
 adminRouter.post("/subscribers", AdminKycController.createSubscriber);
 adminRouter.get("/subscribers/:id", AdminKycController.getSubscriberById);
 adminRouter.patch("/kyc/:userId", AdminKycController.updateKycStatus);
+
+adminRouter.get("/sims", AdminSimController.getSimCards);
+adminRouter.post("/sims", AdminSimController.createSimCard);
+adminRouter.patch("/sims/:id/status", AdminSimController.updateSimStatus);
+adminRouter.get("/sims/:id", AdminSimController.getSimById);
+adminRouter.post("/sims/assign", AdminSimController.assignSim);
 
 export default adminRouter;
