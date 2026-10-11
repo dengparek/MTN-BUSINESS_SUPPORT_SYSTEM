@@ -5,6 +5,7 @@ import { connectDB } from "./config/db";
 
 import { connectRedis } from "./config/redis";
 import { ussdRouter } from "./modules/ussd/ussd.router";
+import AdminRouter from "./modules/admin/admin.routes";
 
 dotenv.config();
 
@@ -18,8 +19,8 @@ app.use(express.json());
 // Critical for parsing urlencoded payloads sent by Africa's Talking USSD Gateway
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/v1/ussd", ussdRouter);
-
+app.use("/ussd", ussdRouter);
+app.use("/api/v1/admin", AdminRouter);
 // --- HEALTH CHECK ROUTE ---
 app.get("/health", async (_req: Request, res: Response) => {
   res.status(200).json({
@@ -31,7 +32,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 
 // --- SERVER INITIALIZATION ---
 async function startServer() {
-  console.log("🚀 Initializing MTN Business Support System Backend...");
+  console.log("Initializing MTN Business Support System Backend...");
 
   // 1. Verify Neon Database Connection
   await connectDB();

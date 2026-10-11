@@ -8,7 +8,7 @@ import {
   orders,
   chargingAccounts,
 } from "../../database/schema";
-import { sql, eq, and, gte, lt } from "drizzle-orm";
+import { sql, eq, and, lt } from "drizzle-orm";
 
 export class AdminDashboardController {
   static async getOverviewMetrics(req: Request, res: Response) {
