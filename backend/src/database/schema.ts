@@ -6,17 +6,11 @@ import {
   bigint,
   integer,
   timestamp,
-  boolean,
   check,
   index,
   uniqueIndex,
-  PgTable,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-
-// --------------------------------------------------
-// ENUMS
-// --------------------------------------------------
 
 export const userRoleEnum = pgEnum("user_role", [
   "ADMIN",

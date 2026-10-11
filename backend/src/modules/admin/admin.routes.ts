@@ -3,14 +3,17 @@ import { AdminAuthController } from "../../modules/admin/admin-auth.controller";
 import { AdminDashboardController } from "../../modules/admin/admin-dashboard.controller";
 import { verifyAdmin } from "../../middlewares/admin.middleware";
 
-const router = Router();
+const AdminRouter = Router();
 
 // Public Admin Auth Route
-router.post("/auth/login", AdminAuthController.login);
-
+AdminRouter.post("/auth/login", AdminAuthController.login);
+AdminRouter.post("/auth/signup", AdminAuthController.createAdmin);
 // Protected Admin Routes
-router.use(verifyAdmin);
+AdminRouter.use(verifyAdmin);
 
-router.get("/dashboard/metrics", AdminDashboardController.getOverviewMetrics);
+AdminRouter.get(
+  "/dashboard/metrics",
+  AdminDashboardController.getOverviewMetrics,
+);
 
-export default router;
+export default AdminRouter;
