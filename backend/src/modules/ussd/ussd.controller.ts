@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
-import { db } from "../../config/db";
-import { users } from "../../database/schema";
+import type { Request, Response } from "express";
+import { db } from "../../config/db.js";
+import { users } from "../../database/schema.js";
 import { eq } from "drizzle-orm";
-import { AgentUSSDHandler } from "./agent-ussd.handler";
-import { SubscriberUSSDHandler } from "./subscriber-ussd.handler";
+import { AgentUSSDHandler } from "./agent-ussd.handler.js";
+import { SubscriberUSSDHandler } from "./subscriber-ussd.handler.js";
 
 export class USSDController {
   static async handleUSSD(req: Request, res: Response) {

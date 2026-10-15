@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { USSDController } from "./ussd.controller.ts";
-import { ussdRateLimiter } from "../../middlewares/ussd-rate-limiter.middleware.ts";
+import { USSDController } from "./ussd.controller.js";
+import { ussdRateLimiter } from "../../middlewares/ussd-rate-limiter.middleware.js";
 
 const ussdRouter = Router();
 

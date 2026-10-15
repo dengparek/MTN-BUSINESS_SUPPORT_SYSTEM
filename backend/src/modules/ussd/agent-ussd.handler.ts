@@ -1,7 +1,8 @@
 import { USSDSessionService } from "../agents/ussd_session.service.js";
 import { AgentServiceError } from "../agents/AgentServiceError.js";
-import { AgentService } from "../agents/agent.service";
+import { AgentService } from "../agents/agent.service.js";
 import { resolveUSSDInputs } from "./ussd-navigation.helper.js";
+import { assertValidPin } from "../../helpers/utils.js";
 
 export class AgentUSSDHandler {
   static async handle(
@@ -49,7 +50,11 @@ export class AgentUSSDHandler {
 
       // Step 2: Save Phone Number & Prompt for Amount
       if (inputs.length === 2) {
-        const targetPhone = inputs[1].trim();
+        const rawInput = inputs[1];
+        if (!rawInput) {
+          return "END Invalid input.";
+        }
+        const targetPhone = rawInput.trim();
         await USSDSessionService.updateSession(sessionId, {
           targetPhoneNumber: targetPhone,
         });
@@ -58,12 +63,17 @@ export class AgentUSSDHandler {
 
       // Step 3: Save Amount & Prompt for PIN
       if (inputs.length === 3) {
-        const amountSSP = parseFloat(inputs[2].trim());
+        const rawInput = inputs[2];
+        if (!rawInput) {
+          return "END Invalid input.";
+        }
+        const amountSSP = parseFloat(rawInput.trim());
         if (isNaN(amountSSP) || amountSSP <= 0) {
           return "END Invalid amount entered. Please enter a positive number.";
         }
 
-        const targetPhone = session.targetPhoneNumber || inputs[1].trim();
+        const targetPhone =
+          session.targetPhoneNumber || inputs[1]?.trim() || "";
         return (
           `CON Sell ${amountSSP.toLocaleString()} SSP Airtime to ${targetPhone}?\n` +
           `Enter 4-digit Agent PIN:`
@@ -72,9 +82,18 @@ export class AgentUSSDHandler {
 
       // Step 4: Validate PIN & Execute Transaction with Idempotency Key
       if (inputs.length === 4) {
-        const inputPin = inputs[3].trim();
-        const targetPhone = session.targetPhoneNumber || inputs[1].trim();
-        const amountSSP = parseFloat(inputs[2].trim());
+        const rawPin = inputs[3];
+        const rawTarget = inputs[1];
+        const rawAmount = inputs[2];
+
+        if (!rawPin || !rawTarget || !rawAmount) {
+          return "END Invalid input sequence. Please try again.";
+        }
+
+        const inputPin = rawPin.trim();
+        assertValidPin(inputPin);
+        const targetPhone = session.targetPhoneNumber || rawTarget.trim();
+        const amountSSP = parseFloat(rawAmount.trim());
 
         // Convert SSP amount to minor units (1 SSP = 100 minor units)
         const amountMinor = BigInt(Math.round(amountSSP * 100));
@@ -144,7 +163,11 @@ export class AgentUSSDHandler {
 
       // Step 2: Handle Sub-menu Selection ("3*1", "3*2", "3*3")
       if (inputs.length === 2) {
-        const subSelection = inputs[1].trim();
+        const rawSub = inputs[1];
+        if (!rawSub) {
+          return "END Invalid selection. Please try again.";
+        }
+        const subSelection = rawSub.trim();
 
         if (subSelection === "1") {
           const sales = await AgentService.getSalesToday(agent.id);

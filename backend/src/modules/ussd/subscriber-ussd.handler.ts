@@ -1,7 +1,5 @@
-import {
-  SubscriberService,
-  SubscriberServiceError,
-} from "../subscribers/subscriber.service.js";
+import { SubscriberService } from "../subscribers/subscriber.service.js";
+import { SubscriberServiceError } from "../subscribers/subscriberServiceError.js";
 import { USSDSessionService } from "../agents/ussd_session.service.js";
 import { formatAllowance } from "../../helpers/utils.js";
 import { ROOT_MENU } from "../../constants/consts.js";
@@ -45,6 +43,9 @@ export class SubscriberUSSDHandler {
     }
 
     const rootChoice = inputs[0];
+    if (!rootChoice) {
+      return "Invalid USSD input sequence.";
+    }
 
     // --- OPTION 1: CHECK BALANCES ---
     if (rootChoice === "1") {
@@ -80,6 +81,10 @@ export class SubscriberUSSDHandler {
       };
 
       const category = categoryMap[rootChoice];
+      if (!category) {
+        return "CON Invalid selection. Please try again.";
+      }
+
       const availableProducts =
         await SubscriberService.getProductsByCategory(category);
 
@@ -103,7 +108,12 @@ export class SubscriberUSSDHandler {
 
       // Step 2: Package Selection & Confirmation Prompt
       if (inputs.length === 2) {
-        const selectionIndex = parseInt(inputs[1], 10) - 1;
+        const rawInput = inputs[1];
+        if (!rawInput) {
+          await USSDSessionService.clearSession(sessionId);
+          return "END Invalid product selection. Session terminated.";
+        }
+        const selectionIndex = parseInt(rawInput.trim(), 10) - 1;
         const selectedProduct = visibleProducts[selectionIndex];
         if (!selectedProduct) {
           await USSDSessionService.clearSession(sessionId);
@@ -128,7 +138,12 @@ export class SubscriberUSSDHandler {
 
       // Step 3: Purchase Execution
       if (inputs.length === 3) {
-        const confirmChoice = inputs[2].trim();
+        const rawConfirm = inputs[2];
+        if (!rawConfirm) {
+          await USSDSessionService.clearSession(sessionId);
+          return "END Invalid choice. Transaction cancelled.";
+        }
+        const confirmChoice = rawConfirm.trim();
 
         if (confirmChoice === "2") {
           await USSDSessionService.clearSession(sessionId);
