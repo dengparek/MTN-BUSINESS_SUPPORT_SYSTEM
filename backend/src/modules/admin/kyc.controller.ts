@@ -1,12 +1,12 @@
-import { Request, Response } from "express";
-import { db } from "../../config/db";
+import type { Request, Response } from "express";
+import { db } from "../../config/db.js";
 import {
   subscribers,
   adminAuditLogs,
   chargingAccounts,
   simAssignments,
   users,
-} from "../../database/schema";
+} from "../../database/schema.js";
 import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
 
 export class AdminKycController {
@@ -17,7 +17,8 @@ export class AdminKycController {
   static async createSubscriber(req: Request, res: Response) {
     try {
       const { phoneNumber, email, firstName, lastName, nationalId } = req.body;
-      const currentAdminId = req.user?.userId;
+      const adminUser = req.user;
+      const currentAdminId = adminUser ? adminUser.userId : undefined;
 
       if (!phoneNumber || !firstName || !lastName || !nationalId) {
         return res.status(400).json({
@@ -64,6 +65,9 @@ export class AdminKycController {
             status: "ACTIVE",
           })
           .returning();
+        if (!newUser) {
+          throw new Error("Failed to create new User record.");
+        }
 
         // Create subscriber profile (auto-verified since admin is registering directly)
         const [newSubscriber] = await tx
@@ -77,6 +81,10 @@ export class AdminKycController {
             kycStatus: "VERIFIED",
           })
           .returning();
+
+        if (!newSubscriber) {
+          throw new Error("Failed to create new subscriber record.");
+        }
 
         // Initialize charging account wallet
         await tx.insert(chargingAccounts).values({
@@ -231,7 +239,7 @@ export class AdminKycController {
         conditions.length > 0 ? and(...conditions) : undefined;
 
       // Fetch paginated subscribers and total count concurrently
-      const [subscriberList, [{ count }]] = await Promise.all([
+      const [subscriberList, [{ count } = { count: 0 }]] = await Promise.all([
         db
           .select({
             id: subscribers.id,
@@ -253,6 +261,9 @@ export class AdminKycController {
           .from(subscribers)
           .where(whereClause),
       ]);
+      // Now you can safely use `countResult.count` anywhere below!
+      // const totalCount = Number(countResult.count);
+      // const totalCount = countResult[0]?.count ?? 0;
 
       return res.status(200).json({
         message: "Subscribers retrieved successfully.",
@@ -340,7 +351,9 @@ export class AdminKycController {
 
         return updated;
       });
-
+      if (!updatedSubscriber) {
+        return res.status(404).json({ error: "Subscriber not found." });
+      }
       return res.status(200).json({
         message: `Subscriber KYC status successfully updated to ${normalizedStatus}.`,
         subscriber: {

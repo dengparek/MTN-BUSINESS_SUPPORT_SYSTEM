@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { AdminAuthController } from "../../modules/admin/admin-auth.controller";
-import { AdminDashboardController } from "../../modules/admin/admin-dashboard.controller";
-import { verifyAdmin } from "../../middlewares/admin.middleware";
-import { AdminKycController } from "./kyc.controller";
-import { AdminSimController } from "./sim.controller";
+import { AdminAuthController } from "../../modules/admin/admin-auth.controller.js";
+import { AdminDashboardController } from "../../modules/admin/admin-dashboard.controller.js";
+import { verifyAdmin } from "../../middlewares/admin.middleware.js";
+import { AdminKycController } from "./kyc.controller.js";
+import { AdminSimController } from "./sim.controller.js";
 
 const adminRouter = Router();
 

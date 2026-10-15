@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import { db } from "../../config/db";
-import { adminAuditLogs, users } from "../../database/schema";
+import type { Request, Response } from "express";
+import { db } from "../../config/db.js";
+import { adminAuditLogs, users } from "../../database/schema.js";
 import { eq, and, or } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -30,7 +30,7 @@ export class AdminAuthController {
         .where(
           or(
             eq(users.phoneNumber, phoneNumber),
-            email ? eq(users.email, email) : eq(users.phoneNumber, ""), // fallback if email is optional
+            email ? eq(users.email, email) : eq(users.phoneNumber, ""),
           ),
         )
         .limit(1);
@@ -59,6 +59,9 @@ export class AdminAuthController {
           })
           .returning();
 
+        if (!newAdmin) {
+          throw new Error("Failed to create admin user in database.");
+        }
         // Record the administrative action in audit logs
         if (currentAdminId) {
           await tx.insert(adminAuditLogs).values({
@@ -72,7 +75,9 @@ export class AdminAuthController {
 
         return newAdmin;
       });
-
+      if (!result) {
+        return "All User Details are Required";
+      }
       return res.status(201).json({
         message: "New admin user successfully created.",
         admin: {

@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { db } from "../../config/db";
+import type { Request, Response } from "express";
+import { db } from "../../config/db.js";
 import {
   simCards,
   simAssignments,
@@ -7,7 +7,7 @@ import {
   agents,
   adminAuditLogs,
   msisdns,
-} from "../../database/schema";
+} from "../../database/schema.js";
 import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
 
 export class AdminSimController {
@@ -18,7 +18,8 @@ export class AdminSimController {
   static async createSimCard(req: Request, res: Response) {
     try {
       const { iccid, imsi } = req.body;
-      const currentAdminId = req.user?.userId;
+      const adminUser = req.user;
+      const currentAdminId = adminUser ? adminUser.userId : undefined;
 
       if (!iccid || !imsi) {
         return res.status(400).json({ error: "ICCID and IMSI are required." });
@@ -47,6 +48,9 @@ export class AdminSimController {
             status: "INACTIVE", // New inventory starts inactive until assigned
           })
           .returning();
+        if (!inserted) {
+          throw new Error("Failed to insert SIM card into inventory.");
+        }
 
         if (currentAdminId) {
           await tx.insert(adminAuditLogs).values({
@@ -253,7 +257,7 @@ export class AdminSimController {
         conditions.length > 0 ? and(...conditions) : undefined;
 
       // Fetch paginated SIM cards and total count concurrently
-      const [simList, [{ count }]] = await Promise.all([
+      const [simList, countResult] = await Promise.all([
         db
           .select({
             id: simCards.id,
@@ -273,15 +277,17 @@ export class AdminSimController {
           .where(whereClause),
       ]);
 
+      const totalCount = countResult[0]?.count ?? 0;
+
       return res.status(200).json({
         message: "SIM inventory retrieved successfully.",
         data: {
           sims: simList,
           pagination: {
-            total: Number(count),
+            total: Number(totalCount),
             page: pageNumber,
             limit: pageSize,
-            totalPages: Math.ceil(Number(count) / pageSize),
+            totalPages: Math.ceil(Number(totalCount) / pageSize),
           },
         },
       });

@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { db } from "../../config/db";
+import type { Request, Response } from "express";
+import { db } from "../../config/db.js";
 import {
   agents,
   subscribers,
@@ -7,11 +7,11 @@ import {
   simAssignments,
   orders,
   chargingAccounts,
-} from "../../database/schema";
+} from "../../database/schema.js";
 import { sql, eq, and, lt } from "drizzle-orm";
 
 export class AdminDashboardController {
-  static async getOverviewMetrics(req: Request, res: Response) {
+  static async getOverviewMetrics(_req: Request, res: Response) {
     try {
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
@@ -93,43 +93,83 @@ export class AdminDashboardController {
           .from(chargingAccounts),
       ]);
 
-      const totalSims = Number(simStats[0]?.totalSims || 0);
-      const assignedSims = Number(simStats[0]?.assignedSims || 0);
+      // Fallback to a default object if simStats[0] is undefined
+      // const simStat = simStats[0] ?? { totalSims: 0, assignedSims: 0 };
+      const simStat = simStats[0] ?? {
+        totalSims: 0,
+        assignedSims: 0,
+        activeSims: 0,
+      };
+
+      const totalSims = Number(simStat.totalSims);
+      const assignedSims = Number(simStat.assignedSims);
+
+      const subStat = subscriberStats[0] ?? {
+        total: 0,
+        active: 0,
+        suspended: 0,
+        blocked: 0,
+      };
+
+      const kycStat = kycStats[0] ?? {
+        pending: 0,
+        verified: 0,
+        rejected: 0,
+      };
+
+      const chargingStat = chargingStats[0] ?? {
+        totalWalletBalance: "0",
+      };
+
+      const agentStat = agentStats[0] ?? {
+        total: 0,
+        active: 0,
+        suspended: 0,
+        totalFloat: "0",
+      };
+
+      const lowFloat = lowFloatAgents[0] ?? {
+        count: 0,
+      };
+
+      const orderStat = orderStats[0] ?? {
+        totalOrdersToday: 0,
+        completedToday: 0,
+        revenueToday: "0",
+      };
 
       const metrics = {
         subscribers: {
-          total: Number(subscriberStats[0]?.total || 0),
-          active: Number(subscriberStats[0]?.active || 0),
-          suspended: Number(subscriberStats[0]?.suspended || 0),
-          blocked: Number(subscriberStats[0]?.blocked || 0),
+          total: Number(subStat.total),
+          active: Number(subStat.active),
+          suspended: Number(subStat.suspended),
+          blocked: Number(subStat.blocked),
           kyc: {
-            pending: Number(kycStats[0]?.pending || 0),
-            verified: Number(kycStats[0]?.verified || 0),
-            rejected: Number(kycStats[0]?.rejected || 0),
+            pending: Number(kycStat.pending),
+            verified: Number(kycStat.verified),
+            rejected: Number(kycStat.rejected),
           },
-          totalWalletLiabilityMinor:
-            chargingStats[0]?.totalWalletBalance || "0",
+          totalWalletLiabilityMinor: chargingStat.totalWalletBalance,
         },
         simCards: {
           total: totalSims,
-          active: Number(simStats[0]?.activeSims || 0),
+          active: Number(simStat.activeSims),
           assigned: assignedSims,
           unassignedStock: Math.max(0, totalSims - assignedSims),
         },
         agents: {
-          total: Number(agentStats[0]?.total || 0),
-          active: Number(agentStats[0]?.active || 0),
-          suspended: Number(agentStats[0]?.suspended || 0),
-          lowFloatWarningCount: Number(lowFloatAgents[0]?.count || 0),
-          totalFloatBalanceMinor: agentStats[0]?.totalFloat || "0",
+          total: Number(agentStat.total),
+          active: Number(agentStat.active),
+          suspended: Number(agentStat.suspended),
+          lowFloatWarningCount: Number(lowFloat.count),
+          totalFloatBalanceMinor: agentStat.totalFloat,
         },
         ordersToday: {
-          totalCount: Number(orderStats[0]?.totalOrdersToday || 0),
-          completedCount: Number(orderStats[0]?.completedToday || 0),
-          revenueMinor: orderStats[0]?.revenueToday || "0",
+          totalCount: Number(orderStat.totalOrdersToday),
+          completedCount: Number(orderStat.completedToday),
+          revenueMinor: orderStat.revenueToday,
         },
       };
-
       return res.status(200).json({
         message: "Admin dashboard metrics fetched successfully.",
         data: metrics,
