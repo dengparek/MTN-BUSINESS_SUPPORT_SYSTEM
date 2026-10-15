@@ -12,20 +12,20 @@ if (redisUrl) {
 
 export const redisClient = createClient({
   url: redisUrl,
-  socket: {
-    // Required for secure rediss:// endpoints on cloud hosts
-
-    tls: redisUrl.startsWith("rediss://") ? true : undefined,
-    rejectUnauthorized: false,
-  },
+  ...(redisUrl.startsWith("rediss://") && {
+    socket: {
+      tls: true,
+      rejectUnauthorized: false,
+    },
+  }),
 });
 
 redisClient.on("error", (err) => {
-  console.error("❌ Redis Client Error:", err);
+  console.error("Redis Client Error:", err);
 });
 
 redisClient.on("connect", () => {
-  console.log("⚡ Connected to Upstash Redis successfully!");
+  console.log("Connected to Upstash Redis successfully!");
 });
 
 export async function connectRedis() {
@@ -34,7 +34,7 @@ export async function connectRedis() {
       await redisClient.connect();
     }
   } catch (error) {
-    console.error("❌ Failed to connect to Redis:", error);
+    console.error("Failed to connect to Redis:", error);
     throw error;
   }
 }

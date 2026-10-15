@@ -10,7 +10,7 @@ import path from "path";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.development.local") });
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("❌ DATABASE_URL is missing from environment variables.");
+  throw new Error("DATABASE_URL is missing from environment variables.");
 }
 
 export default defineConfig({

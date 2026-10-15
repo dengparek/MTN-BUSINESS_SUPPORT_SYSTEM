@@ -7,7 +7,7 @@ import path from "path";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.development.local") });
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("❌ DATABASE_URL is not defined in environment variables.");
+  throw new Error("DATABASE_URL is not defined in environment variables.");
 }
 
 // Configure PostgreSQL pool with Neon SSL support
