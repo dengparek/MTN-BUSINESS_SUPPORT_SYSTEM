@@ -1,4 +1,4 @@
-import { AgentServiceError } from "../modules/agents/AgentServiceError";
+import { AgentServiceError } from "../modules/agents/AgentServiceError.js";
 
 export function normalizePhoneNumber(phoneNumber: string): string {
   return phoneNumber.trim().replace(/[()\s-]/g, "");

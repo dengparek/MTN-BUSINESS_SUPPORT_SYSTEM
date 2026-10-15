@@ -1,11 +1,12 @@
-import express, { Request, Response } from "express";
+import type { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { connectDB } from "./config/db";
+import { connectDB } from "./config/db.js";
 
-import { connectRedis } from "./config/redis";
-import { ussdRouter } from "./modules/ussd/ussd.router";
-import AdminRouter from "./modules/admin/admin.routes";
+import { connectRedis } from "./config/redis.js";
+import { ussdRouter } from "./modules/ussd/ussd.router.js";
+import AdminRouter from "./modules/admin/admin.routes.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/ussd", ussdRouter);
 app.use("/api/v1/admin", AdminRouter);
+
 // --- HEALTH CHECK ROUTE ---
 app.get("/health", async (_req: Request, res: Response) => {
   res.status(200).json({

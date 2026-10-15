@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { redisClient } from "../config/redis.js";
 
 const MAX_REQUESTS_PER_WINDOW = 30; // Max 30 requests
