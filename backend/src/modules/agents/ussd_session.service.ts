@@ -1,5 +1,5 @@
-import { redisClient } from "../../config/redis";
-import { USSDSessionState } from "../../types/index";
+import { redisClient } from "../../config/redis.js";
+import type { USSDSessionState } from "../../types/index.js";
 import dotenv from "dotenv";
 
 dotenv.config();

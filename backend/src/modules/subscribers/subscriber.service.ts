@@ -14,16 +14,7 @@ import {
 } from "../../database/schema.js";
 import { normalizePhoneNumber } from "../../helpers/utils.js";
 import { validCategories, validUnits } from "../../constants/consts.js";
-
-export class SubscriberServiceError extends Error {
-  constructor(
-    public readonly code: string,
-    message: string,
-  ) {
-    super(message);
-    this.name = "SubscriberServiceError";
-  }
-}
+import { SubscriberServiceError } from "./subscriberServiceError.js";
 
 export class SubscriberService {
   /**
@@ -140,7 +131,7 @@ export class SubscriberService {
         if (existingOrder.requestFingerprint !== requestFingerprint) {
           throw new SubscriberServiceError(
             "IDEMPOTENCY_KEY_REUSED",
-            "This idempotency key belongs to a different request.",
+            "A request of this kind has already been processed successfully.",
           );
         }
 
@@ -328,6 +319,9 @@ export class SubscriberService {
         })
         .returning();
 
+      if (!newInstance) {
+        throw new Error("Failed to create product instance record.");
+      }
       // 7. Record financial ledger entry with currency validation
       await tx.insert(accountLedgerEntries).values({
         orderId: order.id,

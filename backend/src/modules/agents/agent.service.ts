@@ -21,15 +21,6 @@ import {
 } from "../../constants/consts.js";
 import { redisClient } from "../../config/redis.js";
 
-function assertValidPin(pin: string): void {
-  if (!/^\d{4}$/.test(pin)) {
-    throw new AgentServiceError(
-      "INVALID_PIN_FORMAT",
-      "PIN must contain exactly four digits.",
-    );
-  }
-}
-
 export class AgentService {
   private static async getSalesForPeriod(agentId: string, startDate: Date) {
     const completedOrders = await db
