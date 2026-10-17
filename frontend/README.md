@@ -1,75 +1,87 @@
-# React + TypeScript + Vite
+# MTN BSS Admin Dashboard (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The administrative web portal for the MTN Business Support System (BSS). Built for telecommunications operators and system administrators to oversee field agent liquidity, manage account statuses, and monitor immutable system audit logs in real-time.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠 Tech Stack
 
-## React Compiler
+- **Core Framework**: React, TypeScript, Vite
+- **Styling**: Tailwind CSS (clean, minimalist enterprise design)
+- **Routing**: React Router
+- **API Client**: Axios / Native Fetch with interceptors for JWT injection
+- **Icons**: Lucide React
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📂 Project Structure
 
 ```
-
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+frontend/
+├── public/                       # Static assets & favicons
+├── src/
+│   ├── assets/                   # Images and branding assets
+│   ├── components/               # Reusable UI components (Modals, Tables, Buttons)
+│   ├── context/                  # Auth and global state management
+│   ├── hooks/                    # Custom React hooks (useAuth, useAgents)
+│   ├── pages/                    # Core view components (Login, Dashboard, Agents, AuditLogs)
+│   ├── services/                 # API service modules (authService, agentService)
+│   ├── types/                    # TypeScript interfaces & type definitions
+│   ├── App.tsx                   # Root component & route definitions
+│   └── main.tsx                  # Application entry point
+├── tailwind.config.js            # Tailwind CSS configuration
+├── tsconfig.json                 # TypeScript compiler configuration
+└── package.json                  # Frontend dependencies and scripts
 ```
+
+🚀 Key Features & UI Modules
+
+1. Secure Authentication Portal
+
+Clean login screen for administrative credentials.
+Stateless JWT session storage with automatic redirection for expired tokens (401 Unauthorized).
+
+2. Agent Directory & Management
+
+Search & Filter: Real-time filtering of agents by name, agent code (AGT-XXXX), or operational status (ACTIVE, SUSPENDED, LOCKED).
+Onboarding Modal: Secure form to provision new field agents with auto-generated or custom codes and secure 4-digit USSD PINs.
+
+3. Financial Float Adjustments
+
+   Interactive modal for crediting or debiting agent float balances in minor units (SSP).
+   Mandatory audit justification field required before submitting any financial movement.
+   Real-time validation blocking adjustments on inactive or suspended accounts (403 Forbidden). 4. Status Control Center
+
+   Instant toggling of agent operational states (ACTIVE --> SUSPENDED / LOCKED).
+   Audit trail feedback confirming successful status transitions.
+
+   ⚙️ Environment Variables
+   Create a .env file in the root of the frontend directory with your backend API base URL:
+   Code snippet
+   VITE_API_BASE_URL=http://localhost:5000/api/v1
+
+   📥 Installation & Local Development
+
+   Navigate to the frontend directory:
+
+   Bash
+   cd frontend
+
+   Install dependencies:Bashnpm install
+   Start the development server:
+
+   Bash
+   npm run dev
+
+   Build for production:
+
+   Bash
+   npm run build
+
+   🎨 Design Principles
+
+   Designed following clean, realistic, and minimalist enterprise UI standards:
+
+   Zero AI-Slop: Avoids superfluous background gradients, placeholder cards, and bloated component libraries.
+
+   Data-Dense & Scannable: Optimized tables and status badges allowing operators to assess agent liquidity and risk at a glance.
