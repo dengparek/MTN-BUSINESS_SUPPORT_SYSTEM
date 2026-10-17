@@ -19,6 +19,11 @@ export const pool = new Pool({
   // Add connection timeout and keepalive to prevent hanging sockets
   connectionTimeoutMillis: 5000,
   idleTimeoutMillis: 30000,
+  max: 20,
+});
+
+pool.on("error", (err, _client) => {
+  console.error("Unexpected error on idle database client", err);
 });
 export const db = drizzle(pool, { schema });
 

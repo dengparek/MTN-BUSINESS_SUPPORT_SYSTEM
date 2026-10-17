@@ -20,6 +20,11 @@ app.use(express.json());
 // Critical for parsing urlencoded payloads sent by Africa's Talking USSD Gateway
 app.use(express.urlencoded({ extended: true }));
 
+// Enable global BigInt JSON serialization for Drizzle bigint columns
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString(); // or Number(this) if you prefer numbers
+};
+
 app.use("/ussd", ussdRouter);
 app.use("/api/v1/admin", AdminRouter);
 
