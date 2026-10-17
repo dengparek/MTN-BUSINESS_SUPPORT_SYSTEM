@@ -7,6 +7,10 @@ import { SubscriberUSSDHandler } from "./subscriber-ussd.handler.js";
 
 export class USSDController {
   static async handleUSSD(req: Request, res: Response) {
+    console.log(
+      "Incoming USSD Request Phone:",
+      JSON.stringify(req.body.phoneNumber),
+    );
     // const start = Date.now();
     const startTime = performance.now();
     let responseMessage = "END System error occurred.";
