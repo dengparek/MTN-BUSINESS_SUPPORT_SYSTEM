@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { and, eq, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 
 import { db } from "../../config/db.js";
 import {
@@ -12,8 +12,9 @@ import {
   chargingAccounts,
   orders,
   accountLedgerEntries,
+  adminAuditLogs,
 } from "../../database/schema.js";
-import { normalizePhoneNumber } from "../../helpers/utils.js";
+import { assertValidPin, normalizePhoneNumber } from "../../helpers/utils.js";
 import { AgentServiceError } from "./AgentServiceError.js";
 import {
   LOCKOUT_DURATION_SECONDS,
@@ -485,5 +486,198 @@ export class AgentService {
       success: false,
       message: `Invalid Agent PIN. (${remaining}) attempt(s) remaining.`,
     };
+  }
+
+  /**
+   * Register and onboard a new field agent
+   */
+  static async createAgent(data: {
+    phoneNumber: string;
+    email?: string;
+    pin: string;
+    fullName: string;
+    agentCode?: string;
+    initialFloatMinor?: number | bigint;
+    adminId?: string;
+    ipAddress?: string | null;
+  }) {
+    const trimmedPhone = data.phoneNumber.trim();
+    const pinStr = String(data.pin).trim();
+    assertValidPin(pinStr);
+
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.phoneNumber, trimmedPhone))
+      .limit(1);
+
+    if (existingUser) {
+      throw new AgentServiceError(
+        "DUPLICATE_USER",
+        "A user with this phone number already exists.",
+      );
+    }
+
+    const pinHash = await bcrypt.hash(pinStr, 10);
+    const startingFloat =
+      data.initialFloatMinor !== undefined
+        ? BigInt(data.initialFloatMinor)
+        : 0n;
+
+    const generatedAgentCode = data.agentCode
+      ? data.agentCode.trim()
+      : `AGT-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    return await db.transaction(async (tx) => {
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          phoneNumber: trimmedPhone,
+          email: data.email ? data.email.trim() : null,
+          role: "AGENT",
+          status: "ACTIVE",
+        })
+        .returning();
+
+      if (!createdUser) {
+        throw new Error("Failed to create agent user record.");
+      }
+
+      const [createdAgent] = await tx
+        .insert(agents)
+        .values({
+          userId: createdUser.id,
+          agentCode: generatedAgentCode,
+          fullName: data.fullName.trim(),
+          pinHash: pinHash,
+          floatBalanceMinor: startingFloat,
+          status: "ACTIVE",
+        })
+        .returning();
+
+      if (!createdAgent) {
+        throw new Error("Failed to create agent record.");
+      }
+
+      if (data.adminId) {
+        await tx.insert(adminAuditLogs).values({
+          adminUserId: data.adminId,
+          action: "AGENT_CREATE",
+          targetId: createdAgent.id,
+          details: `Admin created new field agent: ${data.fullName.trim()} (${generatedAgentCode}) with phone ${trimmedPhone}`,
+          ipAddress: data.ipAddress || null,
+        });
+      }
+
+      return {
+        agent: createdAgent,
+        user: createdUser,
+      };
+    });
+  }
+
+  /**
+   * Fetch paginated agents with status filtering
+   */
+  static async getPaginatedAgents(query: {
+    status?: "ACTIVE" | "SUSPENDED";
+    page: number;
+    limit: number;
+  }) {
+    const offset = (query.page - 1) * query.limit;
+    const conditions = [];
+
+    if (query.status) {
+      conditions.push(eq(agents.status, query.status));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [agentList, [{ count } = { count: 0 }]] = await Promise.all([
+      db
+        .select({
+          id: agents.id,
+          userId: agents.userId,
+          floatBalanceMinor: agents.floatBalanceMinor,
+          status: agents.status,
+          createdAt: agents.createdAt,
+          user: {
+            phoneNumber: users.phoneNumber,
+            email: users.email,
+            role: users.role,
+          },
+        })
+        .from(agents)
+        .innerJoin(users, eq(agents.userId, users.id))
+        .where(whereClause)
+        .orderBy(desc(agents.createdAt))
+        .limit(query.limit)
+        .offset(offset),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(agents)
+        .where(whereClause),
+    ]);
+
+    return {
+      agents: agentList,
+      total: Number(count),
+    };
+  }
+
+  /**
+   * Adjust agent float balance (Credit/Debit) with audit logging
+   */
+  static async adjustFloat(data: {
+    agentId: string;
+    amountMinor: bigint;
+    actionType: "CREDIT" | "DEBIT";
+    reason: string;
+    adminId?: string;
+    ipAddress?: string | null;
+  }) {
+    const [targetAgent] = await db
+      .select()
+      .from(agents)
+      .where(eq(agents.id, data.agentId))
+      .limit(1);
+    if (!targetAgent) {
+      throw new AgentServiceError("AGENT_NOT_FOUND", "Agent not found.");
+    }
+
+    const currentFloat = BigInt(targetAgent.floatBalanceMinor);
+    let newFloat: bigint;
+
+    if (data.actionType === "CREDIT") {
+      newFloat = currentFloat + data.amountMinor;
+    } else {
+      if (currentFloat < data.amountMinor) {
+        throw new AgentServiceError(
+          "INSUFFICIENT_FLOAT",
+          "Insufficient agent float balance for this debit adjustment.",
+        );
+      }
+      newFloat = currentFloat - data.amountMinor;
+    }
+    return await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(agents)
+        .set({ floatBalanceMinor: newFloat })
+        .where(eq(agents.id, data.agentId))
+        .returning();
+
+      if (data.adminId) {
+        const sspAmount = Number(data.amountMinor) / 100;
+        await tx.insert(adminAuditLogs).values({
+          adminUserId: data.adminId,
+          action: `FLOAT_${data.actionType}`,
+          targetId: data.agentId,
+          details: `Admin adjusted float for agent ${data.agentId}: ${data.actionType} ${sspAmount} SSP. Reason: ${data.reason}`,
+          ipAddress: data.ipAddress || null,
+        });
+      }
+
+      return updated;
+    });
   }
 }

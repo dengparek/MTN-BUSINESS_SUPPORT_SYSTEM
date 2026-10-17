@@ -15,6 +15,7 @@ export class AdminAuthController {
           Message: "Wrong or missing Creditials",
         });
       }
+
       const currentAdminId = req.user?.userId;
 
       if (!phoneNumber || !password || !fullName) {
@@ -62,6 +63,7 @@ export class AdminAuthController {
         if (!newAdmin) {
           throw new Error("Failed to create admin user in database.");
         }
+
         // Record the administrative action in audit logs
         if (currentAdminId) {
           await tx.insert(adminAuditLogs).values({
@@ -101,12 +103,12 @@ export class AdminAuthController {
 
   static async login(req: Request, res: Response) {
     try {
-      const { emailOrPhone, password } = req.body;
+      const { email, password } = req.body;
 
-      if (!emailOrPhone || !password) {
+      if (!email || !password) {
         return res
           .status(400)
-          .json({ error: "Email/Phone and password are required." });
+          .json({ error: "Email and password are required." });
       }
 
       // Find user with ADMIN role
@@ -115,7 +117,7 @@ export class AdminAuthController {
         .from(users)
         .where(
           and(
-            eq(users.phoneNumber, emailOrPhone),
+            eq(users.email, email),
             eq(users.role, "ADMIN"),
             eq(users.status, "ACTIVE"),
           ),
@@ -139,9 +141,17 @@ export class AdminAuthController {
       }
 
       // Generate JWT Token (stateless session valid for 8 hours)
+      const secret = process.env.JWT_SECRET as string;
+      if (!secret) {
+        console.error("JWT_SECRET is missing from environment variables.");
+        return res
+          .status(500)
+          .json({ error: "Internal server configuration error." });
+      }
+
       const token = jwt.sign(
         { userId: adminUser.id, role: adminUser.role },
-        process.env.JWT_SECRET!,
+        secret,
         { expiresIn: "8h" },
       );
 
@@ -150,6 +160,7 @@ export class AdminAuthController {
         token,
         admin: {
           id: adminUser.id,
+          email: adminUser.email,
           phoneNumber: adminUser.phoneNumber,
         },
       });
