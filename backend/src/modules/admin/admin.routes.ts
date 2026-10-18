@@ -6,6 +6,7 @@ import { AdminKycController } from "./kyc.controller.js";
 import { AdminSimController } from "./sim.controller.js";
 import { AdminAgentController } from "./agent.controller.js";
 import { AdminAuditController } from "./audit.controller.js";
+import { AdminProductController } from "./product.controller.js";
 
 const adminRouter = Router();
 
@@ -40,5 +41,14 @@ adminRouter.patch("/agents/:id/status", AdminAgentController.updateAgentStatus);
 
 adminRouter.get("/audit-logs", AdminAuditController.getAuditLogs);
 adminRouter.get("/ledger-summary", AdminAuditController.getLedgerSummary);
+
+adminRouter.post("/products", AdminProductController.createProduct);
+adminRouter.get("/products", AdminProductController.listProducts);
+adminRouter.get("/products/:id", AdminProductController.listProducts);
+adminRouter.patch("/products/:id", AdminProductController.updateProduct);
+adminRouter.patch(
+  "/products/:id/status",
+  AdminProductController.changeProductStatus,
+);
 
 export default adminRouter;
