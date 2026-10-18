@@ -39,7 +39,7 @@ export class AgentService {
 
     const totalSalesMinor = completedOrders.reduce(
       (acc, order) => acc + order.amountMinor,
-      0n,
+      0,
     );
 
     return {
@@ -274,7 +274,7 @@ export class AgentService {
           subscriberId: target.subscriberId,
           agentId,
           type: "AIRTIME_TOPUP",
-          amountMinor,
+          amountMinor: Number(amountMinor),
           idempotencyKey,
           requestFingerprint,
           status: "PENDING",

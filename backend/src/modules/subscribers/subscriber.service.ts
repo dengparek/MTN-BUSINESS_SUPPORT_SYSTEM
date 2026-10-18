@@ -15,6 +15,7 @@ import {
 import { normalizePhoneNumber } from "../../helpers/utils.js";
 import { validCategories, validUnits } from "../../constants/consts.js";
 import { SubscriberServiceError } from "./subscriberServiceError.js";
+import { bigint } from "zod";
 
 export class SubscriberService {
   /**
@@ -223,7 +224,7 @@ export class SubscriberService {
           subscriberId,
           productId,
           type: "BUNDLE_PURCHASE",
-          amountMinor: product.priceMinor,
+          amountMinor: Number(product.priceMinor),
           idempotencyKey,
           requestFingerprint,
           status: "PENDING",
@@ -276,14 +277,14 @@ export class SubscriberService {
       const [updatedAccount] = await tx
         .update(chargingAccounts)
         .set({
-          balanceMinor: sql`${chargingAccounts.balanceMinor} - ${product.priceMinor}`,
+          balanceMinor: sql`${chargingAccounts.balanceMinor} - ${BigInt(product.priceMinor)}`,
           version: sql`${chargingAccounts.version} + 1`,
           updatedAt: new Date(),
         })
         .where(
           and(
             eq(chargingAccounts.subscriberId, subscriberId),
-            gte(chargingAccounts.balanceMinor, product.priceMinor),
+            gte(chargingAccounts.balanceMinor, BigInt(product.priceMinor)),
           ),
         )
         .returning();
@@ -311,8 +312,8 @@ export class SubscriberService {
         .values({
           subscriberId,
           productId: product.id,
-          initialQuantity: product.allowance,
-          remainingQuantity: product.allowance,
+          initialQuantity: BigInt(product.allowance),
+          remainingQuantity: BigInt(product.allowance),
           unit: product.unit,
           status: "ACTIVE",
           expiresAt,
@@ -328,7 +329,7 @@ export class SubscriberService {
         agentId: null,
         subscriberId,
         direction: "DEBIT",
-        amountMinor: product.priceMinor,
+        amountMinor: BigInt(product.priceMinor),
         currency: "SSP",
         entryKey: `${idempotencyKey}:SUBSCRIBER_BUNDLE_DEBIT`,
       });
