@@ -55,7 +55,16 @@ export const productStatusEnum = pgEnum("product_status", [
   "RETIRED",
 ]);
 
-export const unitEnum = pgEnum("unit_enum", ["BYTES", "SECONDS", "COUNT"]);
+export const unitEnum = pgEnum("unit_enum", [
+  "BYTES",
+  "MB",
+  "GB",
+  "SECONDS",
+  "MINUTES",
+  "COUNT",
+  "SMS",
+  "SSP",
+]);
 
 export const productInstanceStatusEnum = pgEnum("product_instance_status", [
   "ACTIVE",
@@ -342,14 +351,17 @@ export const products = pgTable(
 
     category: productCategoryEnum("category").notNull(),
 
-    allowance: bigint("allowance", { mode: "bigint" }).notNull(),
+    allowance: bigint("allowance", { mode: "number" }).notNull(),
     unit: unitEnum("unit").notNull(),
 
     validitySeconds: integer("validity_seconds").notNull(),
 
-    priceMinor: bigint("price_minor", { mode: "bigint" }).notNull(),
+    priceMinor: bigint("price_minor", { mode: "number" }).notNull(),
 
     status: productStatusEnum("status").default("ACTIVE").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     check("products_allowance_positive_check", sql`${table.allowance} > 0`),
@@ -434,7 +446,7 @@ export const orders = pgTable(
 
     type: orderTypeEnum("type").notNull(),
 
-    amountMinor: bigint("amount_minor", { mode: "bigint" }).notNull(),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
 
     // Caller must reuse this key when retrying the same logical request.
     idempotencyKey: varchar("idempotency_key", { length: 128 })
